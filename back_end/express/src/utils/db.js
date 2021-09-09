@@ -5,7 +5,9 @@ const mongoose = require('mongoose');
  * @returns {Promise<void>}
  */
 const connectDB = async () =>{
-    await mongoose.connect(process.env.NET_MONGO_URL);
+    await mongoose.connect(process.env.NET_MONGO_URL, {
+        autoIndex: true
+    });
     console.log(`MongoDB Connect Success`);
 }
 
