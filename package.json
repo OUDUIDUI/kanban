@@ -1,0 +1,16 @@
+{
+    "name": "todo-list",
+    "version": "1.0.0",
+    "scripts": {
+        "server": "node scripts/server.js",
+        "server:express": "cd ./back_end/express && yarn server"
+    },
+    "repository": "git@github.com:OUDUIDUI/todo-list.git",
+    "author": "oushihao <oushihao97@163.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "execa": "^5.1.1",
+        "minimist": "^1.2.5",
+        "nodemon": "^2.0.12"
+    }
+}

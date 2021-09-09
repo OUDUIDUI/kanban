@@ -1,0 +1,10 @@
+{
+    "name": "todo-list-express",
+    "version": "1.0.0",
+    "main": "server.js",
+    "scripts": {
+        "server": "nodemon server.js",
+        "server:express": "yarn server express"
+    },
+    "license": "MIT"
+}
