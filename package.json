@@ -2,7 +2,6 @@
     "name": "todo-list",
     "version": "1.0.0",
     "scripts": {
-        "server": "node scripts/server.js",
         "server:express": "cd ./back_end/express && yarn server"
     },
     "repository": "git@github.com:OUDUIDUI/todo-list.git",
