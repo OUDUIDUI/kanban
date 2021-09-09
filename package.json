@@ -10,6 +10,7 @@
     "devDependencies": {
         "execa": "^5.1.1",
         "minimist": "^1.2.5",
-        "nodemon": "^2.0.12"
+        "nodemon": "^2.0.12",
+        "ts-node": "^10.2.1"
     }
 }

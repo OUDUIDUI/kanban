@@ -1,10 +1,14 @@
 {
     "name": "todo-list-express",
     "version": "1.0.0",
-    "main": "server.js",
+    "main": "src/server.js",
     "scripts": {
-        "server": "nodemon server.js",
-        "server:express": "yarn server express"
+        "server": "NODE_ENV=development nodemon src/server.js"
     },
-    "license": "MIT"
+    "license": "MIT",
+    "dependencies": {
+        "dotenv": "^10.0.0",
+        "express": "^4.17.1",
+        "mongoose": "^6.0.5"
+    }
 }
