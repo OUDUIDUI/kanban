@@ -3,7 +3,8 @@ const {
     register,
     login,
     getProfile,
-    update
+    updateProfile,
+    updatePassword
 } = require("../controllers/user")
 
 // 实例化路由
@@ -17,6 +18,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.route('/')
     .get(protect, getProfile)
-    .put(protect, update)
+    .put(protect, updateProfile)
+router.put('/password', protect, updatePassword);
 
 module.exports = router;

@@ -76,7 +76,7 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
  * @route  PUT /api/user
  * @access private
  */
-exports.update = asyncHandler(async (req, res, next) => {
+exports.updateProfile = asyncHandler(async (req, res, next) => {
     // 获取更新信息
     const fieldsToUpdate = {
         nickname: req.body.nickname || req.user.nickname,
@@ -89,6 +89,25 @@ exports.update = asyncHandler(async (req, res, next) => {
     res.status(200).json({
         ...userResponseHandle(user)
     });
+})
+
+/**
+ * @desc   更新用户密码
+ * @route  PUT /api/user/password
+ * @access private
+ */
+exports.updatePassword = asyncHandler(async (req, res, next) => {
+    const {newPassword, currentPassword} = req.body;
+    // 判断旧密码是否匹配
+    const user = await UserSchema.findById(req.user._id).select("+password");
+    if (!await matchPassword(currentPassword, user.password)) {
+        return next(new ErrorResponse("密码错误", 401));
+    }
+    // 更新密码
+    user.password = newPassword;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
 })
 
 /**
