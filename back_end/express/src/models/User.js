@@ -1,7 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema({
     nickname: {
@@ -24,21 +21,5 @@ const UserSchema = new mongoose.Schema({
         select: false,    // 不返回
     },
 })
-
-// 生成token
-UserSchema.methods.getSignedJwtToken = () => {
-    return jwt.sign(
-        // token包含数据
-        {
-            uid: this._id,
-            name: this.name,
-            email: this.email
-        },
-        process.env.JWT_SECRET,    // 秘钥
-        {
-            expiresIn: process.env.JWT_EXPIRE  // 过期时间
-        }
-    )
-}
 
 module.exports = mongoose.model("User", UserSchema)

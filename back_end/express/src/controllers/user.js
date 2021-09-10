@@ -2,6 +2,7 @@ const UserSchema = require("../models/User");
 const ErrorResponse = require('../utils/errResponse.js');
 const asyncHandler = require('../middlewares/async.js');
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 /**
  * @desc   注册
@@ -58,6 +59,21 @@ exports.login = asyncHandler(async (req, res, next) => {
 })
 
 /**
+ * @desc   获取用户信息
+ * @route  GET /api/user
+ * @access private
+ */
+exports.getProfile = asyncHandler(async (req, res, next) => {
+    const user = req.user;  // 用户鉴权的时候，已经获取user保存到req中
+
+    res.status(200).json({
+        uid: user._id,
+        nickname: user.nickname,
+        email: user.email
+    });
+})
+
+/**
  * 密码加密
  * @param password<string> 密码
  * @returns {Promise<string>}
@@ -68,13 +84,33 @@ const passEncrypt = async (password) => {
 }
 
 /**
+ * 生成token
+ * @param user
+ * @returns {string}
+ */
+const getSignedJwtToken = (user) => {
+    return jwt.sign(
+        // token包含数据
+        {
+            uid: user._id,
+            name: user.name,
+            email: user.email
+        },
+        process.env.JWT_SECRET,    // 秘钥
+        {
+            expiresIn: process.env.JWT_EXPIRE  // 过期时间
+        }
+    )
+}
+
+/**
  * 生成token返回
  * @param user 用户
  * @param statusCode 状态码
  * @param res response
  */
 const sendTokenResponse = (user, statusCode, res) => {
-    const token = user.getSignedJwtToken();
+    const token = getSignedJwtToken(user);
 
     const options = {
         expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),  // cookie有效期
@@ -87,6 +123,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     }
 
     res.status(statusCode).cookie("token", token, options).json({
+        uid: user._id,
         nickname: user.nickname,
         email: user.email,
         token
