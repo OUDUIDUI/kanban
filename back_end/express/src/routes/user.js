@@ -2,7 +2,8 @@ const express = require('express');
 const {
     register,
     login,
-    getProfile
+    getProfile,
+    update
 } = require("../controllers/user")
 
 // 实例化路由
@@ -16,5 +17,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.route('/')
     .get(protect, getProfile)
+    .put(protect, update)
 
 module.exports = router;

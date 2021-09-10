@@ -74,6 +74,27 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
 })
 
 /**
+ * @desc   更新用户信息
+ * @route  PUT /api/user
+ * @access private
+ */
+exports.update = asyncHandler(async (req, res, next) => {
+    // 获取更新信息
+    const fieldsToUpdate = {
+        nickname: req.body.nickname || req.user.nickname
+    }
+    const user = await UserSchema.findByIdAndUpdate(req.user._id, fieldsToUpdate, {
+        new: true,
+        runValidators: true  // 校验
+    });
+    res.status(200).json({
+        uid: user._id,
+        nickname: user.nickname,
+        email: user.email
+    });
+})
+
+/**
  * 密码加密
  * @param password<string> 密码
  * @returns {Promise<string>}
