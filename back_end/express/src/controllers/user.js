@@ -11,7 +11,7 @@ const jwt = require("jsonwebtoken");
  */
 exports.register = asyncHandler(async (req, res, next) => {
     // 获取body内容
-    const {nickname, password, email} = req.body;
+    const {nickname, password, email, avatar} = req.body;
     // 密码加密
     const newPass = await passEncrypt(password);
 
@@ -23,7 +23,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 
     // 注册用户
     const user = await UserSchema.create({
-        nickname, password: newPass, email
+        nickname, password: newPass, email, avatar
     })
     // 生成token
     sendTokenResponse(user, 200, res);
@@ -69,7 +69,8 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
     res.status(200).json({
         uid: user._id,
         nickname: user.nickname,
-        email: user.email
+        email: user.email,
+        avatar: user.avatar
     });
 })
 
@@ -81,7 +82,8 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
 exports.update = asyncHandler(async (req, res, next) => {
     // 获取更新信息
     const fieldsToUpdate = {
-        nickname: req.body.nickname || req.user.nickname
+        nickname: req.body.nickname || req.user.nickname,
+        avatar: req.body.avatar || req.user.avatar,
     }
     const user = await UserSchema.findByIdAndUpdate(req.user._id, fieldsToUpdate, {
         new: true,
@@ -90,7 +92,8 @@ exports.update = asyncHandler(async (req, res, next) => {
     res.status(200).json({
         uid: user._id,
         nickname: user.nickname,
-        email: user.email
+        email: user.email,
+        avatar: user.avatar
     });
 })
 
@@ -147,6 +150,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         uid: user._id,
         nickname: user.nickname,
         email: user.email,
+        avatar: user.avatar,
         token
     });
 }

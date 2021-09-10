@@ -14,6 +14,10 @@ const UserSchema = new mongoose.Schema({
             "请填写正确的邮箱地址",
         ],
     },
+    avatar: {
+        type: String,
+        default: 'https://cdn.ouduidui.cn/avatar/ouduidui.png', // 默认值
+    },
     password: {
         type: String,
         required: [true, "请添加密码"],
