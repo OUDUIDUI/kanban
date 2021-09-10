@@ -67,10 +67,7 @@ exports.getProfile = asyncHandler(async (req, res, next) => {
     const user = req.user;  // 用户鉴权的时候，已经获取user保存到req中
 
     res.status(200).json({
-        uid: user._id,
-        nickname: user.nickname,
-        email: user.email,
-        avatar: user.avatar
+        ...userResponseHandle(user)
     });
 })
 
@@ -90,10 +87,7 @@ exports.update = asyncHandler(async (req, res, next) => {
         runValidators: true  // 校验
     });
     res.status(200).json({
-        uid: user._id,
-        nickname: user.nickname,
-        email: user.email,
-        avatar: user.avatar
+        ...userResponseHandle(user)
     });
 })
 
@@ -147,10 +141,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     }
 
     res.status(statusCode).cookie("token", token, options).json({
-        uid: user._id,
-        nickname: user.nickname,
-        email: user.email,
-        avatar: user.avatar,
+        ...userResponseHandle(user),
         token
     });
 }
@@ -163,4 +154,19 @@ const sendTokenResponse = (user, statusCode, res) => {
  */
 const matchPassword = async (enteredPassword, password) => {
     return await bcrypt.compare(enteredPassword, password);
+}
+
+
+/**
+ * 处理返回数据
+ * @param user
+ * @returns {{uid: String, nickname: String, avatar: String, email: String}}
+ */
+const userResponseHandle = (user) => {
+    return {
+        uid: user._id,
+        nickname: user.nickname,
+        email: user.email,
+        avatar: user.avatar
+    }
 }
