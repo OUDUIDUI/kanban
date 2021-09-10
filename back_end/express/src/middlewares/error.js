@@ -5,8 +5,9 @@ const ErrorResponse = require('../utils/errResponse')
  * @param err
  * @param req
  * @param res
+ * @param next
  */
-const errorHandler = (err, req, res) => {
+const errorHandler = (err, req, res, next) => {
     // id数据源报错
     if (err.name === "CastError") {
         const message = `Resource not found with id of ${err.value}`
