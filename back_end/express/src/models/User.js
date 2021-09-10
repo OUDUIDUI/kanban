@@ -24,6 +24,12 @@ const UserSchema = new mongoose.Schema({
         minlength: 6,
         select: false,    // 不返回
     },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    resetPasswordToken:String,
+    resetPasswordExpire:Date
 })
 
 module.exports = mongoose.model("User", UserSchema)

@@ -3,6 +3,8 @@ const ErrorResponse = require('../utils/errResponse.js');
 const asyncHandler = require('../middlewares/async.js');
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail")
 
 /**
  * @desc   注册
@@ -111,6 +113,80 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
 })
 
 /**
+ * @desc   忘记密码
+ * @route  POST /api/user/reset-password
+ * @access public
+ */
+exports.forgetPassword = asyncHandler(async (req, res, next) => {
+    const {email} = req.body;
+    const user = await UserSchema.findOne({email}).select("+password");
+    // 校验用户
+    if (!user) {
+        return next(new ErrorResponse("未找到该用户", 404));
+    }
+    // 生成token
+    const {
+        resetToken,
+        resetPasswordToken,
+        resetPasswordExpire
+    } = await getResetPasswordToken();
+    user.resetPasswordToken = resetPasswordToken;
+    user.resetPasswordExpire = resetPasswordExpire;
+    await user.save();
+
+    // 发送邮件 包含重置密码的网址
+    const resetUrl = `${req.protocol}://${req.get("host")}/todo-list/reset-password/${resetToken}`;
+    const html = resetPasswordEmail(resetUrl);
+
+    try {
+        await sendEmail({
+            email: email,
+            subject: "TodoList重置密码",
+            html
+        })
+    } catch (e) {
+        // 发送失败
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+
+        await user.save({validateBeforeSave: false});
+        return next(new ErrorResponse("邮件发送失败"), 500);
+    }
+    res.status(200).json({success: true});
+})
+
+/**
+ * @desc   忘记密码
+ * @route  PUT /api/user/reset-password
+ * @access public
+ */
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+    const {resetToken, password} = req.body;
+    // 获取token
+    const resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+    // 查找用户
+    const user = await UserSchema.findOne({
+        resetPasswordToken,
+        resetPasswordExpire: {$gt: Date.now()}
+    })
+
+    if (!user) {
+        return next(new ErrorResponse("Token无效，请重新操作", 400));
+    }
+
+    // 重置密码
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({success: true});
+})
+
+/**
  * 密码加密
  * @param password<string> 密码
  * @returns {Promise<string>}
@@ -188,4 +264,70 @@ const userResponseHandle = (user) => {
         email: user.email,
         avatar: user.avatar
     }
+}
+
+/**
+ * 生成忘记密码Token
+ * @returns {Promise<{resetPasswordToken: string, resetToken: string, resetPasswordExpire: number}>}
+ */
+const getResetPasswordToken = async () => {
+    // 随机生成一串十六进制数值
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    // 加密
+    const resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+    // 设置过期时间
+    const resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10分钟过期
+
+    return {
+        resetToken,
+        resetPasswordToken,
+        resetPasswordExpire
+    };
+}
+
+/**
+ * 邮件模板
+ * @param resetUrl
+ * @returns {string}
+ */
+const resetPasswordEmail = (resetUrl) => {
+    return `
+        <div style="
+            margin: 0;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            width: 100vw;
+            height: 100vh;
+            background: #fff">
+            <div style="color: #333;font-size: 24px;line-height: 1.5; font-weight: lighter">
+                您在TodoList网站想要重置密码
+            </div>
+            <div style="color: #333;font-size: 24px;;line-height: 1.5;margin-bottom: 30px;; font-weight: lighter">
+                现在需要您在邮箱进行验证操作
+            </div>
+            <a style="
+                box-sizing:border-box;
+                padding: 16px 50px;
+                height: 50px; 
+                border-radius: 25px; 
+                font-size: 18px;
+                line-height: 1; 
+                background: #222; 
+                color: #fff;
+                border: none;
+                text-decoration: none;
+                cursor: pointer;
+                user-select: none; 
+                font-weight: lighter" 
+            href="${resetUrl}">
+                点击重置您的密码
+            </a>
+        </div>`
 }

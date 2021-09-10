@@ -4,7 +4,9 @@ const {
     login,
     getProfile,
     updateProfile,
-    updatePassword
+    updatePassword,
+    forgetPassword,
+    resetPassword
 } = require("../controllers/user")
 
 // 实例化路由
@@ -20,5 +22,8 @@ router.route('/')
     .get(protect, getProfile)
     .put(protect, updateProfile)
 router.put('/password', protect, updatePassword);
+router.route('/reset-password')
+    .post(forgetPassword)
+    .put(resetPassword)
 
 module.exports = router;
