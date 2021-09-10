@@ -13,6 +13,12 @@ exports.register = asyncHandler(async (req, res, next) => {
     const {nickname, password, email} = req.body;
     // 密码加密
     const newPass = await passEncrypt(password);
+
+    let users = await UserSchema.find({email});
+    if(users.length) {
+        return next(new ErrorResponse('该邮箱已被注册过了', 500));
+    }
+
     // 注册用户
     const user = await UserSchema.create({
         nickname, password: newPass, email
