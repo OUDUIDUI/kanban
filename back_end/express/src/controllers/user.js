@@ -14,8 +14,6 @@ const sendEmail = require("../utils/sendEmail")
 exports.register = asyncHandler(async (req, res, next) => {
     // 获取body内容
     const {nickname, password, email, avatar} = req.body;
-    // 密码加密
-    const newPass = await passEncrypt(password);
 
     // 查找有没有重复邮箱
     let users = await UserSchema.find({email});
@@ -25,7 +23,7 @@ exports.register = asyncHandler(async (req, res, next) => {
 
     // 注册用户
     const user = await UserSchema.create({
-        nickname, password: newPass, email, avatar
+        nickname, password, email, avatar
     })
     // 生成token
     sendTokenResponse(user, 200, res);
@@ -51,7 +49,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     }
 
     // 密码匹配
-    const isMatch = await matchPassword(password, user.password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
         return next(new ErrorResponse("请输入正确的邮箱或密码", 401));
     }
@@ -102,7 +100,7 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
     const {newPassword, currentPassword} = req.body;
     // 判断旧密码是否匹配
     const user = await UserSchema.findById(req.user._id).select("+password");
-    if (!await matchPassword(currentPassword, user.password)) {
+    if (!await user.matchPassword(currentPassword)) {
         return next(new ErrorResponse("密码错误", 401));
     }
     // 更新密码
@@ -125,13 +123,7 @@ exports.forgetPassword = asyncHandler(async (req, res, next) => {
         return next(new ErrorResponse("未找到该用户", 404));
     }
     // 生成token
-    const {
-        resetToken,
-        resetPasswordToken,
-        resetPasswordExpire
-    } = await getResetPasswordToken();
-    user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpire = resetPasswordExpire;
+    const resetToken = await user.getResetPasswordToken();
     await user.save();
 
     // 发送邮件 包含重置密码的网址
@@ -187,43 +179,13 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
 })
 
 /**
- * 密码加密
- * @param password<string> 密码
- * @returns {Promise<string>}
- */
-const passEncrypt = async (password) => {
-    const salt = await bcrypt.genSalt(10);   // 加密规则
-    return await bcrypt.hash(password, salt);
-}
-
-/**
- * 生成token
- * @param user
- * @returns {string}
- */
-const getSignedJwtToken = (user) => {
-    return jwt.sign(
-        // token包含数据
-        {
-            uid: user._id,
-            name: user.name,
-            email: user.email
-        },
-        process.env.JWT_SECRET,    // 秘钥
-        {
-            expiresIn: process.env.JWT_EXPIRE  // 过期时间
-        }
-    )
-}
-
-/**
  * 生成token返回
  * @param user 用户
  * @param statusCode 状态码
  * @param res response
  */
 const sendTokenResponse = (user, statusCode, res) => {
-    const token = getSignedJwtToken(user);
+    const token = user.getSignedJwtToken();
 
     const options = {
         expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),  // cookie有效期
@@ -242,17 +204,6 @@ const sendTokenResponse = (user, statusCode, res) => {
 }
 
 /**
- * 密码校验
- * @param enteredPassword 输入的密码
- * @param password 用户密码
- * @returns {Promise<boolean>}
- */
-const matchPassword = async (enteredPassword, password) => {
-    return await bcrypt.compare(enteredPassword, password);
-}
-
-
-/**
  * 处理返回数据
  * @param user
  * @returns {{uid: String, nickname: String, avatar: String, email: String}}
@@ -264,28 +215,6 @@ const userResponseHandle = (user) => {
         email: user.email,
         avatar: user.avatar
     }
-}
-
-/**
- * 生成忘记密码Token
- * @returns {Promise<{resetPasswordToken: string, resetToken: string, resetPasswordExpire: number}>}
- */
-const getResetPasswordToken = async () => {
-    // 随机生成一串十六进制数值
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    // 加密
-    const resetPasswordToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
-    // 设置过期时间
-    const resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10分钟过期
-
-    return {
-        resetToken,
-        resetPasswordToken,
-        resetPasswordExpire
-    };
 }
 
 /**
